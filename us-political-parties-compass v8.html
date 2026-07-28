@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>US Political Parties Compass — 2026</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f4f2ec;
+    color: #2c2c2a;
+    margin: 0;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { font-size: 13px; color: #5f5e5a; margin: 0 0 20px; max-width: 660px; text-align: center; }
+  #wrap { position: relative; }
+  svg { background: #fffdf8; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .axis-line { stroke: #b4b2a9; stroke-width: 1; }
+  .grid-line { stroke: #e4e2d8; stroke-width: 1; }
+  .quad-label { font-size: 12px; fill: #888780; font-weight: 600; letter-spacing: 0.03em; }
+  .axis-label { font-size: 12px; fill: #444441; font-weight: 600; }
+  .axis-label-btn { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .axis-label-btn:hover { fill: #d85a30; }
+
+  .region {
+    cursor: pointer;
+    stroke: none;
+    fill-opacity: 0.16;
+  }
+  .region:hover { fill-opacity: 0.24; }
+  .region.dem { fill: #378ADD; }
+  .region.rep { fill: #E24B4A; }
+  .region-label { font-size: 12px; font-weight: 600; pointer-events: none; }
+  .region-label.dem { fill: #0C447C; }
+  .region-label.rep { fill: #791F1F; }
+
+  .node circle, .node polygon {
+    stroke: #2c2c2a;
+    stroke-width: 1.5;
+    cursor: pointer;
+    transition: r 0.15s ease;
+  }
+  .node:hover circle, .node:hover polygon { stroke-width: 2.5; }
+  .node text {
+    font-size: 11px;
+    fill: #2c2c2a;
+    pointer-events: none;
+    font-weight: 500;
+  }
+  .node.selected circle, .node.selected polygon { stroke: #d85a30; stroke-width: 3; }
+  .lib polygon { fill: #9fe1cb; }
+  .green polygon { fill: #97c459; }
+  .con polygon { fill: #f0997b; }
+  .fwd polygon { fill: #d3d1c7; }
+  .wfp polygon { fill: #cecbf6; }
+
+  .faction circle { stroke-width: 1; r: 6; }
+  .faction text { font-size: 9.5px; font-weight: 400; }
+  .faction.demf circle { fill: #85B7EB; stroke: #185FA5; }
+  .faction.repf circle { fill: #F09595; stroke: #A32D2D; }
+  .faction.selected circle { stroke: #d85a30; stroke-width: 2.5; }
+
+  #panel {
+    max-width: 660px;
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: #fffdf8;
+    border: 1px solid #e4e2d8;
+    border-radius: 10px;
+    min-height: 90px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  #panel h3 { margin: 0 0 6px; font-size: 15px; }
+  #panel .meta { font-size: 12px; color: #888780; margin-bottom: 8px; }
+  #panel .placeholder { color: #888780; font-style: italic; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 12px; color: #5f5e5a; max-width: 660px; justify-content: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .diamond { width: 9px; height: 9px; display: inline-block; transform: rotate(45deg); }
+
+  #panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid #d3d1c7;
+    border-radius: 6px;
+    resize: vertical;
+    min-height: 60px;
+    background: #fbfaf6;
+    color: #2c2c2a;
+  }
+  #panel .notes-label { font-size: 12px; font-weight: 600; color: #5f5e5a; margin-top: 12px; display: block; }
+
+  #toolbar {
+    max-width: 660px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  #toolbar button, #toolbar label {
+    background: #fffdf8;
+    border: 1px solid #d3d1c7;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: #444441;
+    font-size: 12px;
+  }
+  #toolbar button:hover, #toolbar label:hover { background: #f4f2ec; }
+  #name-input {
+    font-size: 12px;
+    padding: 6px 8px;
+    border: 1px solid #d3d1c7;
+    border-radius: 6px;
+    width: 130px;
+  }
+</style>
+</head>
+<body>
+
+<h1>US political parties — 2026</h1>
+<p class="subtitle">Democratic and Republican parties shown as coalition footprints, with the internal factions that make up each one plotted inside. Third parties are narrow enough to plot as single points. Click any dot — party, faction, or third party — for detail and to take notes.</p>
+
+<button id="howto-btn" style="position:fixed;bottom:20px;right:20px;z-index:100;background:#2c2c2a;color:#fffdf8;border:none;border-radius:24px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);">How to use this</button>
+
+<div id="howto-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(44,44,42,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fffdf8;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;border-radius:12px;padding:24px 28px;position:relative;">
+    <button id="howto-close" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888780;">×</button>
+    <h2 style="margin:0 0 14px;font-size:18px;color:#2c2c2a;">How to use this — and how not to lose your work</h2>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#2c2c2a;"><strong>1. Click around.</strong> Click any colored shape — a shaded region, a small dot inside it, a diamond, or an axis label — to see what it means. Click it again to close it.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#2c2c2a;"><strong>2. Write notes.</strong> When something is open, there's a notes box under the description. Type whatever you want in there.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#d85a30;"><strong>3. The most important part: your notes only exist on THIS screen, right now.</strong> They are not automatically saved anywhere. If you close the tab, close the Chromebook, or someone else uses this Chromebook next period, your notes will be gone — unless you save them first.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#2c2c2a;"><strong>4. To save your notes:</strong> Type your name in the box at the top, then click "Save my version." A file will download — probably to your Downloads folder or Google Drive, depending on how your Chromebook is set up. That file is your notes. Keep track of it the same way you'd keep track of a saved Google Doc.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#d85a30;background:#fbeee9;padding:10px 12px;border-radius:6px;"><strong>Don't double-click that saved file to open it.</strong> It's not a webpage — it's just data. Double-clicking it will show you a page of text that looks a little like this chart, but it's not the working chart, and nothing on it is clickable. That's a dead end, not your notes coming back.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#2c2c2a;"><strong>5. To get your notes back next time:</strong> Open the original document again, not the saved file. Then click the "Load my version" button near the top of the page. A window will pop up asking you to pick a file — choose the one you saved last time. Then click on the same parties or dots you wrote notes on before, and your notes will show up again.</p>
+
+    <p style="font-size:13.5px;line-height:1.6;color:#5f5e5a;font-style:italic;">If you forget to save and lose your notes: it's okay, nothing bad happened, no work went missing anywhere. Just start over — the notes are the only thing that resets, everything else about the chart stays exactly the same.</p>
+  </div>
+</div>
+
+<div style="max-width:660px;padding:12px 18px;background:#f4f2ec;border:1px solid #e4e2d8;border-radius:10px;font-size:12.5px;line-height:1.6;color:#5f5e5a;margin-bottom:4px;">
+  <strong style="color:#2c2c2a;">Why "left" and "right" at all?</strong> It's not metaphorical — it's a seating chart. In France's National Assembly in 1789, supporters of the king and the traditional social order sat to the president's right; supporters of the revolution and equality sat to the left. Newspapers started describing votes that way, and the labels stuck for over two centuries. The economic axis on this chart is a direct descendant of that literal room. <strong style="color:#2c2c2a;">Click any axis label on the chart below for its plain-English definition.</strong>
+</div>
+
+<div id="toolbar">
+  <input type="text" id="name-input" placeholder="Your name">
+  <button id="save-btn">Save my version</button>
+  <label for="load-input">Load my version
+    <input type="file" id="load-input" accept=".json" style="display:none;">
+  </label>
+</div>
+
+
+<div id="wrap">
+<svg id="compass" width="660" height="660" viewBox="0 0 660 660">
+  <line class="grid-line" x1="330" y1="40" x2="330" y2="620"/>
+  <line class="grid-line" x1="40" y1="330" x2="620" y2="330"/>
+  <line class="axis-line" x1="40" y1="330" x2="620" y2="330"/>
+  <line class="axis-line" x1="330" y1="40" x2="330" y2="620"/>
+
+  <text id="label-econright" class="axis-label axis-label-btn" x="620" y="326" text-anchor="end">economic right →</text>
+  <text id="label-econleft" class="axis-label axis-label-btn" x="40" y="326" text-anchor="start">← economic left</text>
+  <text id="label-libertarian" class="axis-label axis-label-btn" x="335" y="52" text-anchor="start">↑ libertarian</text>
+  <text id="label-authoritarian" class="axis-label axis-label-btn" x="335" y="616" text-anchor="start">↓ authoritarian</text>
+
+  <text class="quad-label" x="60" y="70">authoritarian left</text>
+  <text class="quad-label" x="500" y="70">authoritarian right</text>
+  <text class="quad-label" x="60" y="600">libertarian left</text>
+  <text class="quad-label" x="500" y="600">libertarian right</text>
+
+  <g id="regions"></g>
+  <g id="factions"></g>
+  <g id="nodes"></g>
+</svg>
+</div>
+
+<div class="legend">
+  <span><span class="dot" style="background:#378ADD"></span>Democratic coalition</span>
+  <span><span class="dot" style="background:#E24B4A"></span>Republican coalition</span>
+  <span><span class="diamond" style="background:#9fe1cb"></span>Libertarian Party</span>
+  <span><span class="diamond" style="background:#97c459"></span>Green Party</span>
+  <span><span class="diamond" style="background:#f0997b"></span>Constitution Party</span>
+  <span><span class="diamond" style="background:#d3d1c7"></span>Forward Party</span>
+  <span><span class="diamond" style="background:#cecbf6"></span>Working Families Party</span>
+</div>
+
+<div id="panel"><p class="placeholder">Click a region, faction, or third party dot above for detail.</p></div>
+
+<script>
+const cx = 330, cy = 330, scale = 2.4;
+function px(x) { return cx + x * scale; }
+function py(y) { return cy - y * scale; }
+
+const svgns = "http://www.w3.org/2000/svg";
+const regionsG = document.getElementById("regions");
+const factionsG = document.getElementById("factions");
+const nodesG = document.getElementById("nodes");
+const panel = document.getElementById("panel");
+
+const studentNotes = {};
+let activeId = null;
+
+const regions = [
+  {
+    id: "dem",
+    label: "Democratic Party",
+    className: "dem",
+    points: [[-68,50],[-15,50],[-15,-18],[-68,-18]],
+    def: "A coalition spanning progressive/democratic-socialist (Bernie/AOC wing), civil-libertarian left, mainstream party leadership, and a more centrist 'order and opportunity' bloc identified in recent research that groups voters by their actual views rather than just their party label. The internal range is real — the party currently spans libertarian-left to just left-of-center.",
+    note: "Recent Pew/PBS research that sorts voters into groups based on shared beliefs (not just party registration) found the moderate/liberal split inside the party sharper than in past cycles."
+  },
+  {
+    id: "rep",
+    label: "Republican Party",
+    className: "rep",
+    points: [[30,-70],[75,-70],[75,42],[30,42]],
+    def: "A coalition spanning MAGA populism, National Conservatism, the Freedom Caucus / small-government wing, and a shrinking establishment/business-right faction. Currently dominated by the authoritarian-right corner, with the libertarian-right and legacy-establishment factions eclipsed but still present.",
+    note: "Candidate selection and endorsements increasingly run through Trump's personal political operation and allied outside super PACs (like MAGA Inc.) rather than through the traditional layer of party bodies \u2014 the RNC itself, state party central committees, county committees \u2014 that historically handled recruitment and endorsements through elected officers and established procedures."
+  }
+];
+
+regions.forEach(r => {
+  const poly = document.createElementNS(svgns, "polygon");
+  const pts = r.points.map(p => px(p[0]) + "," + py(p[1])).join(" ");
+  poly.setAttribute("points", pts);
+  poly.setAttribute("class", "region " + r.className);
+  poly.addEventListener("click", () => toggleItem(r, "Major party coalition"));
+  regionsG.appendChild(poly);
+
+  const cxLabel = r.points.reduce((s,p) => s + p[0], 0) / r.points.length;
+  const topY = Math.max(...r.points.map(p => p[1]));
+  const label = document.createElementNS(svgns, "text");
+  label.setAttribute("x", px(cxLabel));
+  label.setAttribute("y", py(topY) - 8);
+  label.setAttribute("text-anchor", "middle");
+  label.setAttribute("class", "region-label " + r.className);
+  label.textContent = r.label;
+  regionsG.appendChild(label);
+});
+
+const factions = [
+  {
+    id: "maga",
+    label: "MAGA",
+    x: 55, y: -65, party: "repf",
+    def: "Trump-aligned nationalist populism. Economically mixed (tariffs and protectionism alongside deregulation and tax cuts), but consistently authoritarian on immigration enforcement, executive power, and cultural conformity.",
+    note: "Currently the dominant force reshaping the GOP's coalition and infrastructure."
+  },
+  {
+    id: "natcon",
+    label: "National conservatism",
+    x: 38, y: -50, party: "repf",
+    def: "Intellectual wing behind MAGA-adjacent policy: industrial policy, family policy, skepticism of free-trade orthodoxy, and explicit embrace of state power to enforce a preferred social order.",
+    note: "Distinct from MAGA in tone, largely overlapping in substance."
+  },
+  {
+    id: "estabgop",
+    label: "Establishment right",
+    x: 68, y: -15, party: "repf",
+    def: "Pre-Trump fiscal conservatism: free trade, deregulation, low taxes, institutionally deferential. Shrinking as a share of the coalition but still present in the Senate and in donor networks.",
+    note: "Eclipsed by, but not replaced by, Freedom Caucus / MAGA / National Conservatism."
+  },
+  {
+    id: "freedomcaucus",
+    label: "Freedom Caucus",
+    x: 58, y: 38, party: "repf",
+    def: "Constitutionalist, anti-spending, hostile to federal overreach — but often authoritarian on immigration and social issues, which keeps it from sitting at the far libertarian corner.",
+    note: "Overlaps with MAGA on some votes, clashes on others (spending bills, earmarks)."
+  },
+  {
+    id: "dsa",
+    label: "Progressive / DSA wing",
+    x: -55, y: 30, party: "demf",
+    def: "Bernie/AOC-aligned wing: strong redistribution, Medicare for All, union power — paired with civil-libertarian instincts on policing, surveillance, and speech.",
+    note: "Growing influence in primaries but still a minority within the Democratic caucus."
+  },
+  {
+    id: "civillibleft",
+    label: "Civil liberties left",
+    x: -30, y: 45, party: "demf",
+    def: "ACLU-adjacent tradition: skeptical of state power over speech, surveillance, and policing, combined with support for economic redistribution and regulation.",
+    note: null
+  },
+  {
+    id: "estabdem",
+    label: "Party establishment",
+    x: -45, y: 8, party: "demf",
+    def: "Mainstream party leadership: moderate regulation and redistribution, incremental reform, institutional deference. Currently navigating what analysts describe as a coalition under real strain.",
+    note: "Moderate/liberal splits inside the party are sharper now than in prior cycles."
+  },
+  {
+    id: "blackdemgroup",
+    label: "Center-left moderates",
+    x: -25, y: -10, party: "demf",
+    def: "A moderate, Democratic-leaning bloc identified in recent research that groups voters by their actual views rather than just party label — more critical of party leadership than in past cycles, less ideologically fixed than the progressive wing.",
+    note: null
+  }
+];
+
+factions.forEach(f => {
+  const g = document.createElementNS(svgns, "g");
+  g.setAttribute("class", "node faction " + f.party);
+  g.setAttribute("id", "node-" + f.id);
+
+  const circle = document.createElementNS(svgns, "circle");
+  circle.setAttribute("cx", px(f.x));
+  circle.setAttribute("cy", py(f.y));
+  circle.setAttribute("r", 6);
+
+  const text = document.createElementNS(svgns, "text");
+  text.setAttribute("x", px(f.x));
+  text.setAttribute("y", py(f.y) - 10);
+  text.setAttribute("text-anchor", "middle");
+  text.textContent = f.label;
+
+  g.appendChild(circle);
+  g.appendChild(text);
+  g.addEventListener("click", () => toggleItem(f, f.party === "repf" ? "Republican faction" : "Democratic faction"));
+  factionsG.appendChild(g);
+});
+
+const nodes = [
+  {
+    id: "lib",
+    label: "Libertarian Party",
+    x: 78, y: 82, group: "lib",
+    def: "Wants government out of nearly every decision — economic and personal — that the two major parties still think it should regulate. Lower taxes and less regulation than Republicans typically support, and less restriction on personal choices (drugs, speech, relationships) than either major party supports.",
+    note: null
+  },
+  {
+    id: "green",
+    label: "Green Party",
+    x: -78, y: 55, group: "green",
+    def: "Anti-corporate, redistributive economics with a decentralist, grassroots-democracy approach to authority. Environmentalism is the organizing issue rather than a bolt-on.",
+    note: null
+  },
+  {
+    id: "constitution",
+    label: "Constitution Party",
+    x: 45, y: -70, group: "con",
+    def: "Pro-life, anti-gun-control, anti-tax, anti-immigration, trade protectionist, anti-UN, anti-gay-rights, pro-school-prayer.",
+    note: "Its dot sits inside the shaded Republican region because its ideological position overlaps GOP-faction territory. It's an entirely separate party that happens to occupy similar space on the compass, the same way two unrelated buildings can share a zip code. Reliably fields state and congressional candidates in numerous states each cycle, though without recent presidential traction.",
+    labelOffset: { dx: -20, dy: -18, anchor: "end" }
+  },
+  {
+    id: "forward",
+    label: "Forward Party",
+    x: -4, y: 8, group: "fwd",
+    def: "Founded by Andrew Yang; supports UBI, ranked-choice voting, open primaries, federal term limits, independent redistricting. Deliberately platform-light beyond process reform.",
+    note: null
+  },
+  {
+    id: "wfp",
+    label: "Working Families Party",
+    x: -55, y: 48, group: "wfp",
+    def: "Labor-backed, libertarian-left — close to the Green Party's position but more electorally pragmatic. Frequently works inside Democratic primaries and via fusion voting rather than running fully independent of the two-party structure.",
+    note: "Its dot sits right at the edge of the shaded Democratic region because its ideological position is close to the DSA/progressive-left faction's territory — not because it's part of the Democratic Party. Same as Constitution Party on the Republican side: a separate party occupying similar space on the compass, not a faction of the party whose color surrounds it.",
+    labelOffset: { dx: 38, dy: 22, anchor: "start" }
+  }
+];
+
+nodes.forEach(d => {
+  const g = document.createElementNS(svgns, "g");
+  g.setAttribute("class", "node " + d.group);
+  g.setAttribute("id", "node-" + d.id);
+
+  const nx = px(d.x), ny = py(d.y);
+  const s = d.r || 9;
+  const diamond = document.createElementNS(svgns, "polygon");
+  diamond.setAttribute("points", `${nx},${ny-s} ${nx+s},${ny} ${nx},${ny+s} ${nx-s},${ny}`);
+
+  const text = document.createElementNS(svgns, "text");
+  const off = d.labelOffset || { dx: 0, dy: -14, anchor: "middle" };
+  text.setAttribute("x", nx + off.dx);
+  text.setAttribute("y", ny + off.dy);
+  text.setAttribute("text-anchor", off.anchor);
+  text.textContent = d.label;
+
+  g.appendChild(diamond);
+  g.appendChild(text);
+  g.addEventListener("click", () => toggleItem(d, "Third party"));
+  nodesG.appendChild(g);
+});
+
+const excludedHTML = `
+  <div id="excluded" style="max-width:660px;margin-top:20px;padding:16px 20px;background:#fffdf8;border:1px solid #e4e2d8;border-radius:10px;font-size:13px;line-height:1.6;color:#5f5e5a;">
+    <h3 style="margin:0 0 8px;font-size:14px;color:#2c2c2a;">Parties left off the chart, and why</h3>
+    <p style="margin:0 0 6px;"><strong style="color:#2c2c2a;">Prohibition Party</strong> — the longest-running third party in US history (fielding candidates since 1872), but reduced to token ballot presence with no current organizing relevance.</p>
+    <p style="margin:0 0 6px;"><strong style="color:#2c2c2a;">Socialist Workers Party</strong> and <strong style="color:#2c2c2a;">Socialist Equality Party</strong> — active but marginal; neither fields candidates broadly enough to shape outcomes or represent a meaningful voting bloc.</p>
+    <p style="margin:0;"><strong style="color:#2c2c2a;">Working Class Party</strong> — fields candidates in a handful of states only.</p>
+    <p style="margin:8px 0 0;font-style:italic;">The cutoff here is ballot-relevance, not obscurity for its own sake — these parties exist and are legally real, they just aren't currently shaping the political landscape the way the parties and factions on the chart are.</p>
+  </div>
+`;
+document.getElementById("panel").insertAdjacentHTML("afterend", excludedHTML);
+
+const sizeData = [
+  { label: "Democratic Party", value: 45400000, kind: "registered voters", color: "#378ADD", cite: "USAFacts, April 2026" },
+  { label: "Republican Party", value: 39200000, kind: "registered voters", color: "#E24B4A", cite: "USAFacts, April 2026" },
+  { label: "Libertarian Party", value: 1500000, kind: "registered voters (est.)", color: "#5DCAA5", cite: "est. from USAFacts' 0.8% share of ~189.5M reporting-state registrants, April 2026" },
+  { label: "Green Party", value: 570000, kind: "registered voters (est.)", color: "#97C459", cite: "est. from USAFacts' 0.3% share of ~189.5M reporting-state registrants, April 2026" },
+  { label: "Working Families Party", value: 69622, kind: "dues-paying members", color: "#7F77DD", cite: "Wikipedia/WFP, December 2025 \u2014 membership, not registration, a different metric than the rows above" },
+  { label: "Constitution Party", value: null, kind: "no reliable national count found", color: "#F0997B", cite: null },
+  { label: "Forward Party", value: null, kind: "no reliable national count found", color: "#D3D1C7", cite: null }
+];
+
+const maxRoot = Math.sqrt(45400000);
+
+const sizeChartHTML = `
+  <div style="max-width:660px;margin-top:24px;padding:18px 20px;background:#fffdf8;border:1px solid #e4e2d8;border-radius:10px;">
+    <h3 style="margin:0 0 16px;font-size:15px;color:#2c2c2a;">How big is each party, really?</h3>
+    ${sizeData.map(d => {
+      if (d.value === null) {
+        return `
+          <div style="margin-bottom:10px;">
+            <div style="font-size:12.5px;color:#2c2c2a;font-weight:500;margin-bottom:3px;">${d.label}</div>
+            <div style="height:20px;border:1px dashed #b4b2a9;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:#888780;font-style:italic;">${d.kind}</div>
+          </div>`;
+      }
+      const pct = Math.max(0.5, (Math.sqrt(d.value) / maxRoot) * 100);
+      return `
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;color:#2c2c2a;font-weight:500;margin-bottom:3px;">
+            <span>${d.label}</span>
+            <span style="color:#5f5e5a;font-weight:400;">${d.value.toLocaleString()} ${d.kind}</span>
+          </div>
+          <div style="height:20px;background:#f4f2ec;border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${d.color};"></div>
+          </div>
+          ${d.cite ? `<div style="font-size:10.5px;color:#888780;margin-top:2px;font-style:italic;">${d.cite}</div>` : ""}
+        </div>`;
+    }).join("")}
+  </div>
+`;
+document.getElementById("excluded").insertAdjacentHTML("afterend", sizeChartHTML);
+
+const axisDefs = [
+  {
+    id: "econleft",
+    label: "Economic left",
+    def: "The government should take more from people who have more (mostly through taxes) and use it to help everyone — healthcare, schools, infrastructure, unemployment help, think \"The New Deal\" — so life isn't so unequal.",
+    note: null
+  },
+  {
+    id: "econright",
+    label: "Economic right",
+    def: "People should keep more of their own money and make their own choices with it. Let businesses compete with fewer rules, and the economy will grow and create opportunity on its own — the dominant economic direction in U.S. policy for the last 45+ years.",
+    note: null
+  },
+  {
+    id: "libertarian",
+    label: "Libertarian",
+    def: "Government should have less power over how you live your personal life — what you say, believe, consume, or do — even if that means less order or more risk.",
+    note: null
+  },
+  {
+    id: "authoritarian",
+    label: "Authoritarian",
+    def: "Government (or other institutions) should have more power to enforce rules on how people live and behave, prioritizing order, tradition, or conformity over individual choice.",
+    note: null
+  }
+];
+
+document.getElementById('howto-btn').addEventListener('click', () => {
+  document.getElementById('howto-modal').style.display = 'flex';
+});
+document.getElementById('howto-close').addEventListener('click', () => {
+  document.getElementById('howto-modal').style.display = 'none';
+});
+document.getElementById('howto-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'howto-modal') document.getElementById('howto-modal').style.display = 'none';
+});
+
+document.getElementById('label-econleft').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'econleft'), "Term definition"));
+document.getElementById('label-econright').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'econright'), "Term definition"));
+document.getElementById('label-libertarian').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'libertarian'), "Term definition"));
+document.getElementById('label-authoritarian').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'authoritarian'), "Term definition"));
+
+function toggleItem(d, meta) {
+  if (activeId === d.id) {
+    closePanel();
+  } else {
+    selectItem(d, meta);
+  }
+}
+
+function closePanel() {
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("selected"));
+  activeId = null;
+  panel.innerHTML = `<p class="placeholder">Click a region, faction, or third party dot above for detail.</p>`;
+}
+
+function selectItem(d, meta) {
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("selected"));
+  const el = document.getElementById("node-" + d.id);
+  if (el) el.classList.add("selected");
+  activeId = d.id;
+  const existingNote = studentNotes[d.id] || "";
+  panel.innerHTML = `
+    <h3>${d.label}</h3>
+    <div class="meta">${meta}</div>
+    <p>${d.def}</p>
+    ${d.note ? `<p style="color:#5f5e5a;font-size:13px;"><em>${d.note}</em></p>` : ""}
+    <span class="notes-label">Your notes</span>
+    <textarea id="notes-input" placeholder="Write what you think, questions, or your own take...">${existingNote}</textarea>
+  `;
+  document.getElementById("notes-input").addEventListener("input", (e) => {
+    studentNotes[d.id] = e.target.value;
+  });
+}
+
+document.getElementById("save-btn").addEventListener("click", () => {
+  const name = document.getElementById("name-input").value.trim() || "student";
+  const payload = {
+    name: name,
+    saved_at: new Date().toISOString(),
+    notes: studentNotes
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "political-compass-notes-" + name.replace(/\s+/g, "_") + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("load-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const payload = JSON.parse(evt.target.result);
+      Object.assign(studentNotes, payload.notes || {});
+      if (payload.name) document.getElementById("name-input").value = payload.name;
+      alert("Notes loaded" + (payload.name ? " for " + payload.name : "") + ". Click any party, faction, or third party to see your saved notes.");
+    } catch (err) {
+      alert("Could not read that file. Make sure it's a notes file saved from this page.");
+    }
+  };
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>
