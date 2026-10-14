@@ -130,7 +130,7 @@
 <body>
 
 <h1>US political parties — 2026</h1>
-<p class="subtitle">Democratic and Republican parties shown as coalition footprints, with the internal factions that make up each one plotted inside. Third parties are narrow enough to plot as single points. Click any dot — party, faction, or third party — for detail and to take notes.</p>
+<p class="subtitle">Democratic and Republican parties shown as coalition footprints, with the internal factions that make up each one plotted inside. Third parties are narrow enough to plot as single points. Click any shape — party, faction, or third party — for detail and to take notes.</p>
 
 <button id="howto-btn" style="position:fixed;bottom:20px;right:20px;z-index:100;background:#2c2c2a;color:#fffdf8;border:none;border-radius:24px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);">How to use this</button>
 
@@ -201,7 +201,7 @@
   <span><span class="diamond" style="background:#cecbf6"></span>Working Families Party</span>
 </div>
 
-<div id="panel"><p class="placeholder">Click a region, faction, or third party dot above for detail.</p></div>
+<div id="panel"><p class="placeholder">Click a region, faction, or third party diamond above for detail.</p></div>
 
 <script>
 const cx = 330, cy = 330, scale = 2.4;
@@ -356,7 +356,7 @@ const nodes = [
     label: "Constitution Party",
     x: 45, y: -70, group: "con",
     def: "Pro-life, anti-gun-control, anti-tax, anti-immigration, trade protectionist, anti-UN, anti-gay-rights, pro-school-prayer.",
-    note: "Its dot sits inside the shaded Republican region because its ideological position overlaps GOP-faction territory. It's an entirely separate party that happens to occupy similar space on the compass, the same way two unrelated buildings can share a zip code. Reliably fields state and congressional candidates in numerous states each cycle, though without recent presidential traction.",
+    note: "Its diamond sits inside the shaded Republican region because its ideological position overlaps GOP-faction territory. It's an entirely separate party that happens to occupy similar space on the compass, the same way two unrelated buildings can share a zip code. Reliably fields state and congressional candidates in numerous states each cycle, though without recent presidential traction.",
     labelOffset: { dx: -20, dy: -18, anchor: "end" }
   },
   {
@@ -371,8 +371,8 @@ const nodes = [
     label: "Working Families Party",
     x: -55, y: 48, group: "wfp",
     def: "Labor-backed, libertarian-left — close to the Green Party's position but more electorally pragmatic. Frequently works inside Democratic primaries and via fusion voting rather than running fully independent of the two-party structure.",
-    note: "Its dot sits right at the edge of the shaded Democratic region because its ideological position is close to the DSA/progressive-left faction's territory — not because it's part of the Democratic Party. Same as Constitution Party on the Republican side: a separate party occupying similar space on the compass, not a faction of the party whose color surrounds it.",
-    labelOffset: { dx: 38, dy: 22, anchor: "start" }
+    note: "Its diamond sits right at the edge of the shaded Democratic region because its ideological position is close to the DSA/progressive-left faction's territory — not because it's part of the Democratic Party. Same as Constitution Party on the Republican side: a separate party occupying similar space on the compass, not a faction of the party whose color surrounds it.",
+    labelOffset: { dx: -14, dy: 5, anchor: "end" }
   }
 ];
 
@@ -503,7 +503,7 @@ function toggleItem(d, meta) {
 function closePanel() {
   document.querySelectorAll(".node").forEach(n => n.classList.remove("selected"));
   activeId = null;
-  panel.innerHTML = `<p class="placeholder">Click a region, faction, or third party dot above for detail.</p>`;
+  panel.innerHTML = `<p class="placeholder">Click a region, faction, or third party diamond above for detail.</p>`;
 }
 
 function selectItem(d, meta) {
