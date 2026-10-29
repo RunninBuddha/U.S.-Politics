@@ -97,6 +97,13 @@
     background: #fbfaf6;
     color: #2c2c2a;
   }
+  #panel .learnmore { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e4e2d8; font-size: 13px; }
+  #panel .learnmore .lm-title { font-size: 12px; font-weight: 600; color: #5f5e5a; margin-bottom: 4px; }
+  #panel .learnmore ul { margin: 0 0 6px; padding-left: 18px; }
+  #panel .learnmore li { margin: 2px 0; }
+  #panel .learnmore a { color: #185FA5; text-decoration: underline; }
+  #panel .learnmore a:hover { color: #d85a30; }
+  #panel .learnmore .lm-note { margin: 4px 0 0; font-size: 12px; color: #888780; }
   #panel .notes-label { font-size: 12px; font-weight: 600; color: #5f5e5a; margin-top: 12px; display: block; }
 
   #toolbar {
@@ -492,6 +499,52 @@ document.getElementById('label-econright').addEventListener('click', () => toggl
 document.getElementById('label-libertarian').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'libertarian'), "Term definition"));
 document.getElementById('label-authoritarian').addEventListener('click', () => toggleItem(axisDefs.find(x => x.id === 'authoritarian'), "Term definition"));
 
+// Outside links shown in the panel. Parties link to their own sites; factions
+// mostly have no official site, so they get "approx" matches or an explanation.
+const itemLinks = {
+  dem: { kind: "party", links: [["Democratic Party's own website", "https://democrats.org/"], ["Ballotpedia's page on the Democratic Party", "https://ballotpedia.org/Democratic_Party", "ballot"]] },
+  rep: { kind: "party", links: [["Republican Party's own website", "https://gop.com/"], ["Ballotpedia's page on the Republican Party", "https://ballotpedia.org/Republican_Party", "ballot"]] },
+  lib: { kind: "party", links: [["Libertarian Party's own website", "https://www.lp.org/"], ["Ballotpedia's page on the Libertarian Party", "https://ballotpedia.org/Libertarian_Party", "ballot"]] },
+  green: { kind: "party", links: [["Green Party's own website", "https://www.gp.org/"], ["Ballotpedia's page on the Green Party", "https://ballotpedia.org/Green_Party", "ballot"]] },
+  constitution: { kind: "party", links: [["Constitution Party's own website", "https://constitutionparty.com/"], ["Ballotpedia's page on the Constitution Party", "https://ballotpedia.org/Constitution_Party", "ballot"]] },
+  forward: { kind: "party", links: [["Forward Party's own website", "https://www.forwardparty.com/"]] },
+  wfp: { kind: "party", links: [["Working Families Party's own website", "https://workingfamilies.org/"], ["Ballotpedia's page on the Working Families Party", "https://ballotpedia.org/Working_Families_Party", "ballot"]] },
+  natcon: { kind: "approx", links: [["National Conservatism Conference (run by the Edmund Burke Foundation)", "https://nationalconservatism.org/"]] },
+  estabgop: { kind: "approx", links: [
+    ["Republican Main Street Partnership (center-right Republicans)", "https://www.republicanmainstreet.org/"],
+    ["U.S. Chamber of Commerce (a private business lobbying group, not part of the government)", "https://www.uschamber.com/"]
+  ] },
+  dsa: { kind: "approx", links: [
+    ["Democratic Socialists of America", "https://www.dsausa.org/"],
+    ["Congressional Progressive Caucus (a group of members of Congress)", "https://progressives.house.gov/"]
+  ] },
+  civillibleft: { kind: "approx", links: [["American Civil Liberties Union (a nonpartisan organization, not part of the Democratic Party)", "https://www.aclu.org/"]] },
+  blackdemgroup: { kind: "approx", links: [["Third Way (a centrist think tank)", "https://www.thirdway.org/"]] },
+  maga: { kind: "none", text: "No official website. MAGA is a movement, not a single organization." },
+  freedomcaucus: { kind: "none", text: "No official website." },
+  estabdem: { kind: "none", text: "No separate website. This faction is the party's leadership, so the Democratic Party's own website is the closest match." }
+};
+
+function linksHTML(id) {
+  const info = itemLinks[id];
+  if (!info) return "";
+  if (info.kind === "none") {
+    return `<div class="learnmore"><p class="lm-note" style="margin-top:0;">${info.text}</p></div>`;
+  }
+  const items = info.links.map(([label, url]) =>
+    `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a></li>`).join("");
+  const hasBallot = info.links.some(l => l[2] === "ballot");
+  const ballotCovers = id === "wfp"
+    ? "Its page describes the party's current leadership and history, but not its platform. For the platform, see the party's own website."
+    : "Its page describes the party's platform, current leadership, and history.";
+  const ballotNote = hasBallot ? `<p class="lm-note">Ballotpedia is a nonprofit online encyclopedia of U.S. politics that calls itself nonpartisan. ${ballotCovers} Compare the two.</p>` : "";
+  let note = "";
+  if (info.kind === "approx") {
+    note = `<p class="lm-note">No official website for this group. ${info.links.length > 1 ? "These links are close matches, not official pages." : "This link is a close match, not an official page."}</p>`;
+  }
+  return `<div class="learnmore"><div class="lm-title">Learn more</div><ul>${items}</ul>${note}${ballotNote}<p class="lm-note">Links open in a new tab, so your notes stay here.</p></div>`;
+}
+
 function toggleItem(d, meta) {
   if (activeId === d.id) {
     closePanel();
@@ -517,6 +570,7 @@ function selectItem(d, meta) {
     <div class="meta">${meta}</div>
     <p>${d.def}</p>
     ${d.note ? `<p style="color:#5f5e5a;font-size:13px;"><em>${d.note}</em></p>` : ""}
+    ${linksHTML(d.id)}
     <span class="notes-label">Your notes</span>
     <textarea id="notes-input" placeholder="Write what you think, questions, or your own take...">${existingNote}</textarea>
   `;
